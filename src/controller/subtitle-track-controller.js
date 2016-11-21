@@ -27,16 +27,26 @@ class SubtitleTrackController extends EventHandler {
   // Listen for subtitle track change, then extract the current track ID.
   onMediaAttached(data) {
     this.media = data.media;
+    if (!this.media) {
+      return;
+    }
 
-    this.media.textTracks.addEventListener('change', (event => {
+    this.media.textTracks.addEventListener('change', () => {
+      // Media is undefined when switching streams via loadSource()
+      if (!this.media) {
+        return;
+      }
+
       let trackId = -1;
       let tracks = this.media.textTracks;
       for(let id = 0; id< tracks.length; id++) {
-        if(tracks[id].mode === "showing") trackId = id;
+        if(tracks[id].mode === 'showing') {
+          trackId = id;
+        }
       }
-      // Setting current subtitleTrack will envoke code.
+      // Setting current subtitleTrack will invoke code.
       this.subtitleTrack = trackId;
-    }));
+    });
   }
 
   onMediaDetaching() {
@@ -61,19 +71,22 @@ class SubtitleTrackController extends EventHandler {
     // loop through available subtitle tracks and autoselect default if needed
     // TODO: improve selection logic to handle forced, etc
     tracks.forEach(track => {
-      if(track.default) {
+      if (track.default) {
         this.subtitleTrack = track.id;
         defaultFound = true;
-        return;
       }
     });
   }
 
   // Trigger subtitle track playlist reload.
   onTick() {
-    let trackId = this.trackId,
-        subtitleTrack = this.tracks[trackId],
-        details = subtitleTrack.details;
+    const trackId = this.trackId;
+    const subtitleTrack = this.tracks[trackId];
+    if (!subtitleTrack) {
+      return;
+    }
+
+    const details = subtitleTrack.details;
     // check if we need to load playlist for this subtitle Track
     if (details === undefined || details.live === true) {
       // track not retrieved yet, or live playlist we need to (re)load it
